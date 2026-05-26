@@ -32,6 +32,50 @@ let state = {
   activeFilter: "all",
 };
 
+// ─── DATABASE FUNCTIONS ──────────────────────────────────────
+async function saveUserToDB(name) {
+  try {
+    await fetch("/.netlify/functions/save-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+  } catch (err) { console.error("saveUser error:", err); }
+}
+
+async function saveNegotiationToDB(product, finalPrice, rounds, outcome) {
+  try {
+    await fetch("/.netlify/functions/save-negotiation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName: state.user,
+        productId: product.id,
+        productName: product.name,
+        listedPrice: product.price,
+        finalPrice,
+        rounds,
+        outcome,
+      }),
+    });
+  } catch (err) { console.error("saveNegotiation error:", err); }
+}
+
+async function saveOrderToDB(cart, total, savings) {
+  try {
+    await fetch("/.netlify/functions/save-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName: state.user,
+        cart,
+        total,
+        savings,
+      }),
+    });
+  } catch (err) { console.error("saveOrder error:", err); }
+}
+
 // ─── HELPERS ─────────────────────────────────────────────────
 const fmt = (n) => "₦" + Number(n).toLocaleString("en-NG");
 
@@ -72,6 +116,8 @@ document.getElementById("login-btn").addEventListener("click", function () {
   state.user   = name;
   state.budget = budget;
   state.spent  = 0;
+
+  saveUserToDB(name);
 
   // Switch screens
   document.getElementById("login-screen").classList.remove("active");
@@ -162,7 +208,6 @@ function renderProducts() {
   filtered.forEach(function(product, i) {
     const cls = classify(product);
 
-    // Badge config
     const badgeMap = {
       "affordable":  { cls: "badge-can-afford", label: "✅ Can Afford" },
       "negotiable":  { cls: "badge-negotiate",  label: "💬 Negotiate" },
@@ -170,22 +215,18 @@ function renderProducts() {
     };
     const badge = badgeMap[cls];
 
-    // Card
     const card = document.createElement("div");
     card.className = "product-card " + (cls === "negotiable" ? "negotiable" : cls === "affordable" ? "affordable" : "out-of-range");
     card.style.animationDelay = (i * 0.05) + "s";
 
-    // Badge element
     const badgeEl = document.createElement("span");
     badgeEl.className = "afford-badge " + badge.cls;
     badgeEl.textContent = badge.label;
 
-    // Image wrap
     const imgWrap = document.createElement("div");
     imgWrap.className = "product-img-wrap";
     imgWrap.textContent = product.emoji;
 
-    // Body
     const body = document.createElement("div");
     body.className = "product-body";
 
@@ -218,13 +259,11 @@ function renderProducts() {
     const actions = document.createElement("div");
     actions.className = "product-actions";
 
-    // Negotiate button
     const negBtn = document.createElement("button");
     negBtn.className = "btn-negotiate";
     negBtn.textContent = cls === "out-of-range" ? "💸 Try Anyway" : "💬 Negotiate";
     negBtn.addEventListener("click", function() { openNegotiation(product); });
 
-    // Add at listed price button
     const addBtn = document.createElement("button");
     addBtn.className = "btn-add-direct";
     addBtn.textContent = "Buy Listed";
@@ -292,13 +331,11 @@ function updateCartUI() {
   const cartFooter  = document.getElementById("cart-footer");
   const cartCount   = document.getElementById("cart-count");
 
-  // Badge
   cartCount.textContent = state.cart.length;
 
   if (state.cart.length === 0) {
     cartEmpty.style.display  = "flex";
     cartFooter.classList.remove("visible");
-    // Clear all items except empty state
     const existingItems = cartItems.querySelectorAll(".cart-item");
     existingItems.forEach(function(el) { el.remove(); });
     return;
@@ -307,7 +344,6 @@ function updateCartUI() {
   cartEmpty.style.display = "none";
   cartFooter.classList.add("visible");
 
-  // Rebuild cart item list
   const existingItems = cartItems.querySelectorAll(".cart-item");
   existingItems.forEach(function(el) { el.remove(); });
 
@@ -417,28 +453,22 @@ function openNegotiation(product) {
   state.negotiationRounds = 0;
   state.dealDone          = false;
 
-  // Fill modal header
   document.getElementById("modal-product-emoji").textContent = product.emoji;
   document.getElementById("modal-product-name").textContent  = product.name;
   document.getElementById("modal-product-desc").textContent  = product.desc;
   document.getElementById("modal-listed-price").textContent  = fmt(product.price);
 
-  // Reset chat
   const chatWindow = document.getElementById("chat-window");
   chatWindow.innerHTML = "";
 
-  // Reset offer input
   document.getElementById("offer-input").value = "";
   document.getElementById("offer-hint").textContent = "Make your offer below — the seller will respond!";
 
-  // Hide deal banner, show offer section
   document.getElementById("deal-banner").classList.remove("visible");
   document.getElementById("offer-section").style.display = "block";
 
-  // Open modal
   document.getElementById("negotiation-modal").classList.add("open");
 
-  // Seller opening message
   setTimeout(function() {
     addSellerMessage(
       "Hello " + state.user + "! 👋 Welcome. This beautiful " + product.name +
@@ -548,10 +578,8 @@ function sendOffer() {
   input.value = "";
   state.negotiationRounds++;
 
-  // Show user's offer in chat
   addUserMessage("My offer: " + fmt(offerVal));
 
-  // Seller response after delay
   document.getElementById("send-offer-btn").disabled = true;
   showTypingIndicator();
 
@@ -571,13 +599,11 @@ function sellerRespond(offer) {
   const minPrice = product.minPrice;
   const rounds   = state.negotiationRounds;
 
-  // Offer is at or above listed — accept immediately
   if (offer >= listed) {
     acceptDeal(listed, "That's the listed price, no problem! Deal! 🤝");
     return;
   }
 
-  // Offer is at or above min price — seller accepts
   if (offer >= minPrice) {
     const responses = [
       "Hmm, you drive a hard bargain! " + fmt(offer) + "? Fine, deal! 🤝",
@@ -588,7 +614,6 @@ function sellerRespond(offer) {
     return;
   }
 
-  // Offer is way too low (less than 50% of min price) — reject
   if (offer < minPrice * 0.5) {
     const rejectMessages = [
       "Haba! " + fmt(offer) + "?! That's too low, my friend. I have a family to feed! Can you do better than that?",
@@ -600,17 +625,14 @@ function sellerRespond(offer) {
     return;
   }
 
-  // After many rounds, seller gets more flexible
   if (rounds >= 4) {
-    // Seller drops to min price to close the deal
     const flexMsg = "Okay okay, you've been patient! I'll do " + fmt(minPrice) + " — final price, I swear on my shop! 😅";
     acceptDeal(minPrice, flexMsg);
     return;
   }
 
-  // Counter offer: seller comes down gradually
   const gap         = listed - minPrice;
-  const flexibility = Math.min(rounds * 0.15, 0.6); // gets more flexible each round
+  const flexibility = Math.min(rounds * 0.15, 0.6);
   const counterPrice = Math.round(listed - (gap * flexibility));
   const finalCounter = Math.max(counterPrice, minPrice);
 
@@ -624,14 +646,12 @@ function sellerRespond(offer) {
   addSellerMessage(counterMessages[Math.floor(Math.random() * counterMessages.length)], "counter");
   document.getElementById("offer-hint").textContent = "Seller countered at " + fmt(finalCounter) + " — negotiate further or accept!";
 
-  // Add a quick-accept button hint
   addQuickAcceptButton(finalCounter);
 }
 
 function addQuickAcceptButton(price) {
   const chatWindow = document.getElementById("chat-window");
 
-  // Remove any existing quick-accept
   const existing = document.getElementById("quick-accept-row");
   if (existing) existing.remove();
 
@@ -665,16 +685,15 @@ function acceptDeal(price, sellerMsg) {
   state.agreedPrice = price;
   state.dealDone    = true;
 
+  saveNegotiationToDB(state.currentProduct, price, state.negotiationRounds, "accepted");
+
   addSellerMessage(sellerMsg, "accept");
 
-  // Remove quick accept button if exists
   const existing = document.getElementById("quick-accept-row");
   if (existing) existing.remove();
 
-  // Hide offer section
   document.getElementById("offer-section").style.display = "none";
 
-  // Show deal banner
   const saved     = state.currentProduct.price - price;
   const banner    = document.getElementById("deal-banner");
   const priceDisp = document.getElementById("agreed-price-display");
@@ -763,7 +782,6 @@ function openCheckout() {
 
   const savings = originalTotal - cartTotal;
 
-  // Totals section
   const totals = document.createElement("div");
   totals.className = "checkout-totals";
 
@@ -812,6 +830,8 @@ document.getElementById("place-order-btn").addEventListener("click", function ()
     return acc + item.negotiatedPrice;
   }, 0);
 
+  saveOrderToDB(state.cart, total, savings);
+
   document.getElementById("checkout-modal").classList.remove("open");
   document.getElementById("order-success-modal").classList.add("open");
 
@@ -820,7 +840,6 @@ document.getElementById("place-order-btn").addEventListener("click", function ()
     " item(s) for " + fmt(total) + " has been placed. You saved a total of " +
     fmt(savings) + " through negotiation. Well bargained! 🤝";
 
-  // Clear cart
   state.cart  = [];
   state.spent = 0;
   updateBudgetUI();
