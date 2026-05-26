@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BargainBazaar — Negotiate Your Price</title>
+  <link rel="stylesheet" href="SEMS.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== LOGIN SCREEN ===== -->
+  <section id="login-screen" class="screen active">
+    <div class="login-bg">
+      <div class="floating-shapes">
+        <div class="shape s1">🛍️</div>
+        <div class="shape s2">💰</div>
+        <div class="shape s3">🤝</div>
+        <div class="shape s4">🏪</div>
+        <div class="shape s5">💎</div>
+      </div>
+      <div class="login-card">
+        <div class="login-logo-wrap">
+          <span class="login-logo">🛍️</span>
+        </div>
+        <h1 class="login-title">BargainBazaar</h1>
+        <p class="login-tagline">Where every price is just the <em>opening offer</em></p>
+
+        <div class="login-form">
+          <div class="input-group">
+            <label for="username-input">Your Name</label>
+            <input type="text" id="username-input" placeholder="e.g. Chidi, Amaka..." maxlength="20" autocomplete="off" />
+          </div>
+          <div class="input-group">
+            <label for="budget-input">Your Budget (₦)</label>
+            <div class="input-prefix-wrap">
+              <span class="input-prefix">₦</span>
+              <input type="number" id="budget-input" placeholder="0" min="0" />
+            </div>
+          </div>
+          <p class="login-error" id="login-error"></p>
+          <button id="login-btn" class="btn-primary">Enter the Bazaar <span>→</span></button>
+        </div>
+        <p class="login-note">💡 Tip: Set your budget and we'll show you what you can afford — and what you can negotiate!</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===== MAIN STORE SCREEN ===== -->
+  <section id="store-screen" class="screen">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <div class="nav-brand">🛍️ BargainBazaar</div>
+
+      <div class="nav-stats">
+        <div class="stat-pill">
+          <span class="stat-label">Budget</span>
+          <span class="stat-val" id="nav-budget">₦0</span>
+        </div>
+        <div class="stat-pill spent">
+          <span class="stat-label">Spent</span>
+          <span class="stat-val" id="nav-spent">₦0</span>
+        </div>
+        <div class="stat-pill remaining">
+          <span class="stat-label">Remaining</span>
+          <span class="stat-val" id="nav-remaining">₦0</span>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <span id="nav-username" class="nav-user">👤</span>
+        <button id="cart-toggle-btn" class="cart-btn" aria-label="Open cart">
+          🛒 Cart
+          <span id="cart-count" class="cart-badge">0</span>
+        </button>
+        <button id="logout-btn" class="btn-logout">← Logout</button>
+      </div>
+    </nav>
+
+    <!-- BUDGET PROGRESS BAR -->
+    <div class="budget-bar-section">
+      <div class="budget-bar-inner">
+        <div class="budget-bar-text">
+          <span id="budget-bar-label">Budget: ₦0 used of ₦0</span>
+          <span id="budget-bar-pct">0%</span>
+        </div>
+        <div class="budget-track">
+          <div class="budget-fill" id="budget-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER TABS -->
+    <div class="filter-row">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All Products</button>
+        <button class="filter-tab" data-filter="affordable">✅ Can Afford</button>
+        <button class="filter-tab" data-filter="negotiate">💬 Negotiate to Afford</button>
+        <button class="filter-tab" data-filter="wishlist">💸 Out of Range</button>
+      </div>
+      <p class="filter-info" id="filter-info">Showing all products</p>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div class="products-section">
+      <div class="products-grid" id="products-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ===== CART SIDEBAR ===== -->
+  <div id="cart-overlay" class="overlay" role="presentation"></div>
+
+  <aside id="cart-sidebar" class="cart-sidebar" aria-label="Shopping cart">
+    <div class="cart-header">
+      <h2>🛒 Your Cart</h2>
+      <button id="cart-close-btn" class="icon-btn" aria-label="Close cart">✕</button>
+    </div>
+
+    <div class="cart-items" id="cart-items">
+      <div class="cart-empty" id="cart-empty">
+        <span class="empty-icon">🛍️</span>
+        <p>Your cart is empty</p>
+        <small>Negotiate a deal and add items!</small>
+      </div>
+    </div>
+
+    <div class="cart-footer" id="cart-footer">
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Items</span>
+          <span id="cart-item-count">0</span>
+        </div>
+        <div class="summary-row">
+          <span>Original Total</span>
+          <span id="cart-original-total">₦0</span>
+        </div>
+        <div class="summary-row savings-row">
+          <span>🎉 You Saved</span>
+          <span id="cart-savings">₦0</span>
+        </div>
+        <div class="summary-row total-row">
+          <span>Cart Total</span>
+          <span id="cart-total">₦0</span>
+        </div>
+      </div>
+      <button class="btn-checkout" id="checkout-btn">Proceed to Checkout</button>
+      <button class="btn-clear" id="clear-cart-btn">🗑 Clear Cart</button>
+    </div>
+  </aside>
+
+
+  <!-- ===== NEGOTIATION MODAL ===== -->
+  <div id="negotiation-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Negotiate price">
+    <div class="modal-box">
+
+      <div class="modal-header">
+        <div class="modal-product-info">
+          <div class="modal-emoji-wrap" id="modal-emoji-wrap">
+            <span id="modal-product-emoji"></span>
+          </div>
+          <div class="modal-product-text">
+            <h3 id="modal-product-name"></h3>
+            <p id="modal-product-desc"></p>
+            <p class="modal-listed">Listed Price: <strong id="modal-listed-price"></strong></p>
+          </div>
+        </div>
+        <button id="modal-close-btn" class="icon-btn" aria-label="Close negotiation">✕</button>
+      </div>
+
+      <!-- CHAT WINDOW -->
+      <div class="chat-window" id="chat-window">
+        <!-- Messages injected by JS -->
+      </div>
+
+      <!-- OFFER INPUT -->
+      <div class="offer-section" id="offer-section">
+        <div class="offer-input-row">
+          <span class="currency-badge">₦</span>
+          <input type="number" id="offer-input" placeholder="Your offer..." min="1" />
+          <button id="send-offer-btn" class="btn-send-offer">Send 💬</button>
+        </div>
+        <p class="offer-hint" id="offer-hint">Type an amount and negotiate the price down!</p>
+      </div>
+
+      <!-- DEAL BANNER (shown after agreement) -->
+      <div class="deal-banner" id="deal-banner">
+        <div class="deal-content">
+          <span class="deal-handshake">🤝</span>
+          <div>
+            <p class="deal-label">Deal Agreed!</p>
+            <p class="deal-price-line">Negotiated Price: <strong id="agreed-price-display"></strong></p>
+            <p class="deal-saved-line" id="deal-saved-line"></p>
+          </div>
+        </div>
+        <div class="deal-actions">
+          <button id="add-to-cart-btn" class="btn-add-cart">Add to Cart 🛒</button>
+          <button id="decline-deal-btn" class="btn-decline">No Thanks</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ===== CHECKOUT MODAL ===== -->
+  <div id="checkout-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box checkout-modal-box">
+      <div class="checkout-header">
+        <h2>🎉 Order Summary</h2>
+        <button id="checkout-close-btn" class="icon-btn">✕</button>
+      </div>
+      <div class="checkout-body" id="checkout-body">
+        <!-- Injected by JS -->
+      </div>
+      <div class="checkout-actions">
+        <button class="btn-primary" id="place-order-btn">Place Order ✅</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== ORDER SUCCESS ===== -->
+  <div id="order-success-modal" class="modal-overlay">
+    <div class="modal-box success-box">
+      <div class="success-icon">🎊</div>
+      <h2>Order Placed!</h2>
+      <p id="success-message"></p>
+      <button class="btn-primary" id="continue-shopping-btn">Continue Shopping</button>
+    </div>
+  </div>
+
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+
+  <script src="SEMS.js"></script>
+</body>
+</html>
